@@ -22,4 +22,15 @@ public interface SessionQuestionRepository extends JpaRepository<SessionQuestion
             LIMIT 1
             """)
     Optional<SessionQuestion> findNextUnanswered(@Param("sessionId") Long sessionId);
+
+    @Query("""
+            SELECT sq FROM SessionQuestion sq
+            LEFT JOIN FETCH sq.question q
+            LEFT JOIN FETCH q.choices
+            WHERE sq.session.id = :sessionId
+              AND sq.attempt IS NULL
+            ORDER BY sq.sequenceOrder ASC
+            LIMIT 1
+            """)
+    Optional<SessionQuestion> findNextUnansweredWithChoices(@Param("sessionId") Long sessionId);
 }

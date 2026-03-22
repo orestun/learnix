@@ -1,4 +1,4 @@
-package com.learn.learnix.formatter;
+package com.learn.learnix.bot.formatter;
 
 
 import com.learn.learnix.domain.dto.SessionStatsDto;
@@ -22,7 +22,7 @@ import com.learn.learnix.domain.dto.SessionStatsDto;
  */
 public class StatisticsFormatter {
 
-    private static final String DIVIDER = "──────────────────────";
+    private static final String DIVIDER = "───────────────────";
 
     public static String format(SessionStatsDto stats) {
         StringBuilder sb = new StringBuilder();
@@ -63,7 +63,7 @@ public class StatisticsFormatter {
             String time   = formatMs(q.getTimeTakenMs());
 
             sb.append(String.format(
-                    "<code>Q%-2d</code>  %s  %-35s  <i>%s</i>\n",
+                    "<code>Q%-2d</code>   %s   %-35s  <i>%s</i>\n",
                     q.getSequenceNumber(), marker,
                     escapeHtml(body), time));
         }

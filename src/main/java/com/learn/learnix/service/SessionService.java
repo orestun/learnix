@@ -75,7 +75,7 @@ public class SessionService {
     @Transactional(readOnly = true)
     public SessionQuestion getCurrentQuestion(Long telegramId) {
         Long sessionId = getActiveSessionId(telegramId);
-        return sqRepository.findNextUnanswered(sessionId)
+        return sqRepository.findNextUnansweredWithChoices(sessionId)
                 .orElseThrow(() -> new IllegalStateException(
                         "No current question for telegramId=" + telegramId));
     }
