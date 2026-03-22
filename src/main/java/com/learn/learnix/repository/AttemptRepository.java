@@ -1,0 +1,13 @@
+package com.learn.learnix.repository;
+
+import com.learn.learnix.domain.Attempt;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+interface AttemptRepository extends JpaRepository<Attempt, Long> {
+
+    List<Attempt> findAllBySessionQuestionSessionId(Long sessionId);
+}
