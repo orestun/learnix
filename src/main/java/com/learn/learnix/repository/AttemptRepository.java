@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-interface AttemptRepository extends JpaRepository<Attempt, Long> {
+public interface AttemptRepository extends JpaRepository<Attempt, Long> {
 
     List<Attempt> findAllBySessionQuestionSessionId(Long sessionId);
 }

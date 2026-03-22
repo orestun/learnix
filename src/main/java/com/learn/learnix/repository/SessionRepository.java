@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-interface SessionRepository extends JpaRepository<Session, Long> {
+public interface SessionRepository extends JpaRepository<Session, Long> {
 
     Optional<Session> findTopByUserTelegramIdAndStatusOrderByStartedAtDesc(
             Long telegramId, SessionStatus status);

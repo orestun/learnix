@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-interface SessionQuestionRepository extends JpaRepository<SessionQuestion, Long> {
+public interface SessionQuestionRepository extends JpaRepository<SessionQuestion, Long> {
 
     /**
      * Returns the next unanswered question in the session, ordered by sequence.
