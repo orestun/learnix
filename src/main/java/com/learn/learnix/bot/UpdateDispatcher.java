@@ -29,7 +29,7 @@ public class UpdateDispatcher {
             Long   chatId     = update.getMessage().getChatId();
 
             // /start always wins — abandon any in-progress session and reset
-            if ("/start".equals(text)) {
+            if ("/start".equals(text) || "/restart".equals(text)) {
                 startHandler.handle(bot, telegramId, chatId);
                 return;
             }

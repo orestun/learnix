@@ -94,11 +94,7 @@ public class SessionService {
             return AdvanceResult.NEXT_QUESTION;
         } else {
             // All questions answered — complete the session
-            Session session = sessionRepository.findById(sessionId)
-                    .orElseThrow();
-            session.complete();
-            stateManager.reset(telegramId);  // wipe FSM state, session is done
-            log.info("Completed session id={} for telegramId={}", sessionId, telegramId);
+            completeSession(telegramId);
             return AdvanceResult.SESSION_COMPLETE;
         }
     }
@@ -112,6 +108,17 @@ public class SessionService {
                         telegramId, SessionStatus.IN_PROGRESS)
                 .ifPresent(Session::abandon);
         stateManager.reset(telegramId);
+    }
+
+    @Transactional
+    public void completeSession(Long telegramId) {
+        Long sessionId = getActiveSessionId(telegramId);
+
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow();
+        session.complete();
+        stateManager.reset(telegramId);  // wipe FSM state, session is done
+        log.info("Completed session id={} for telegramId={}", sessionId, telegramId);
     }
 
     // ── Result signal to the bot handler ─────────────────────────────────

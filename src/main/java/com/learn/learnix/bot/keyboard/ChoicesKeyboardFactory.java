@@ -30,6 +30,7 @@ public class ChoicesKeyboardFactory {
 
     private static final String CHOICE_PREFIX = "c:";   // kept short — Telegram limits callbackData to 64 bytes
     private static final String SUBMIT_DATA   = "submit";
+    private static final String EXIT   = "exit";
     private static final String SELECTED_MARK = "✅ ";
     private static final String UNSELECTED_MARK = "☐  ";
 
@@ -53,6 +54,10 @@ public class ChoicesKeyboardFactory {
                 InlineKeyboardButton.builder()
                         .text("Submit answer")
                         .callbackData(SUBMIT_DATA)
+                        .build(),
+                InlineKeyboardButton.builder()
+                        .text("Finish test")
+                        .callbackData(EXIT)
                         .build()
         ));
 

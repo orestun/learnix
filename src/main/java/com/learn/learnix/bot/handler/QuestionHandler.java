@@ -31,12 +31,13 @@ public class QuestionHandler {
         String data       = callback.getData();
 
         UserQuizState state = stateManager.getState(telegramId);
+        boolean isCallBackExit = "exit".equals(data);
 
         if (data.startsWith("c:")) {
             handleToggle(bot, callback, state, chatId, telegramId);
 
-        } else if ("submit".equals(data)) {
-            handleSubmit(bot, callback, state, telegramId, chatId);
+        } else if ("submit".equals(data) || isCallBackExit) {
+            handleSubmitOrExit(bot, callback, state, telegramId, chatId, isCallBackExit);
         }
     }
 
@@ -57,12 +58,12 @@ public class QuestionHandler {
                 .build());
     }
 
-    private void handleSubmit(AbsSender bot, CallbackQuery callback,
-                              UserQuizState state, Long telegramId,
-                              Long chatId) throws Exception {
+    private void handleSubmitOrExit(AbsSender bot, CallbackQuery callback,
+                                    UserQuizState state, Long telegramId,
+                                    Long chatId, Boolean isCallBackExit) throws Exception {
 
         // Guard: require at least one selection
-        if (!state.hasSelections()) {
+        if (!state.hasSelections() && !isCallBackExit) {
             bot.execute(AnswerCallbackQuery.builder()
                     .callbackQueryId(callback.getId())
                     .text("Please select at least one answer first.")
@@ -92,22 +93,30 @@ public class QuestionHandler {
         state.resetSelection();
 
         // Advance the session
-        SessionService.AdvanceResult result = sessionService.advance(telegramId);
+        SessionService.AdvanceResult result;
+
+        if (isCallBackExit) {
+            sessionService.completeSession(telegramId);
+            result = SessionService.AdvanceResult.SESSION_COMPLETE;
+        } else {
+            result = sessionService.advance(telegramId);
+        }
+
 
         if (result == SessionService.AdvanceResult.NEXT_QUESTION) {
             SessionQuestion next = sessionService.getCurrentQuestion(telegramId);
             questionSender.send(bot, chatId, telegramId, next);
 
         } else {
+            boolean isQuizFullyCompleted = sq.getSession().getTotalQuestions() == (sq.getSequenceOrder() + 1);
+
             // Session complete — show statistics
             SessionStatsDto stats = statisticsService.buildForLastSession(telegramId);
             bot.execute(SendMessage.builder()
                     .chatId(chatId)
-                    .text(StatisticsFormatter.format(stats))
+                    .text(StatisticsFormatter.format(stats, isQuizFullyCompleted))
                     .parseMode("HTML")
                     .build());
-
-            stateManager.setBotState(telegramId, BotState.SELECTING_TOPIC);
         }
     }
 }
