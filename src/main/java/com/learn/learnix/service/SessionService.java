@@ -20,14 +20,21 @@ public class SessionService {
     private final UserService            userService;
     private final QuestionService        questionService;
     private final TopicService           topicService;
+    private final SubTopicService        subTopicService;
     private final UserStateManager       stateManager;
 
-    // ── 1. Start a new session ────────────────────────────────────────────
-
     @Transactional
-    public Session startSession(Long telegramId, Long topicId) {
+    public void startSession(Long telegramId, Long topicId, TopicType topicType) {
         User  user  = userService.getByTelegramId(telegramId);
-        Topic topic = topicService.getById(topicId);
+        Topic topic;
+        SubTopic subTopic = null;
+
+        if (TopicType.TOPIC.equals(topicType)) {
+            topic = topicService.getById(topicId);
+        } else {
+            subTopic = subTopicService.getSubTopicById(topicId);
+            topic = subTopic.getTopic();
+        }
 
         // Abandon any lingering IN_PROGRESS session before starting fresh
         sessionRepository
@@ -39,16 +46,37 @@ public class SessionService {
                             old.getId(), telegramId);
                 });
 
-        // Shuffle questions and build the sequence
-        List<Question> questions = questionService.getShuffledForTopic(topicId);
-
         Session session = Session.builder()
                 .user(user)
                 .topic(topic)
-                .totalQuestions(questions.size())
+                .totalQuestions(0)
                 .build();
 
+        if (subTopic != null) {
+            session.setSubTopic(subTopic);
+        }
+
         sessionRepository.save(session);
+    }
+
+    @Transactional
+    public void generateSessionQuestions(Long telegramId, int totalQuestions) {
+        Session session = getInProgressSessionByTelegramId(telegramId);
+        TopicType topicType;
+        long topicId;
+
+        if (session.getSubTopic() != null) {
+            topicId = session.getSubTopic().getId();
+            topicType = TopicType.SUB_TOPIC;
+        } else {
+            topicId = session.getTopic().getId();
+            topicType = TopicType.TOPIC;
+        }
+
+        // Shuffle questions and build the sequence
+        List<Question> questions = questionService.getQuestionsForTopic(topicId, topicType, totalQuestions);
+
+        session.setTotalQuestions(questions.size());
 
         // Create one SessionQuestion row per question, preserving shuffle order
         for (int i = 0; i < questions.size(); i++) {
@@ -57,20 +85,26 @@ public class SessionService {
                     .question(questions.get(i))
                     .sequenceOrder(i)
                     .build();
+
             sqRepository.save(sq);
         }
+    }
 
+    public Session getInProgressSessionByTelegramId(Long telegramId) {
+        return sessionRepository.findTopByUserTelegramIdAndStatusOrderByStartedAtDesc(telegramId, SessionStatus.IN_PROGRESS)
+                .orElseThrow(() -> new IllegalStateException("Session not found for telegramId=" + telegramId));
+    }
+
+    @Transactional
+    public void startQuiz(Session session, long telegramId) {
         // Transition FSM state
         stateManager.setBotState(telegramId, BotState.IN_QUIZ);
         stateManager.getState(telegramId).setQuestionSentAt(System.currentTimeMillis());
 
-        log.info("Started session id={} topicId={} for telegramId={} questions={}",
-                session.getId(), topicId, telegramId, questions.size());
+        log.info("Started session id={} for telegramId={}",
+                session.getId(), telegramId);
 
-        return session;
     }
-
-    // ── 2. Get the current unanswered question ────────────────────────────
 
     @Transactional(readOnly = true)
     public SessionQuestion getCurrentQuestion(Long telegramId) {
@@ -79,8 +113,6 @@ public class SessionService {
                 .orElseThrow(() -> new IllegalStateException(
                         "No current question for telegramId=" + telegramId));
     }
-
-    // ── 3. Advance after an answer is submitted ───────────────────────────
 
     @Transactional
     public AdvanceResult advance(Long telegramId) {
@@ -98,8 +130,6 @@ public class SessionService {
             return AdvanceResult.SESSION_COMPLETE;
         }
     }
-
-    // ── 4. Abandon mid-quiz (e.g. user sends /start again) ───────────────
 
     @Transactional
     public void abandonCurrentSession(Long telegramId) {
@@ -121,14 +151,10 @@ public class SessionService {
         log.info("Completed session id={} for telegramId={}", sessionId, telegramId);
     }
 
-    // ── Result signal to the bot handler ─────────────────────────────────
-
     public enum AdvanceResult {
         NEXT_QUESTION,
         SESSION_COMPLETE
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────
 
     private Long getActiveSessionId(Long telegramId) {
         return sessionRepository

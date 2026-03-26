@@ -28,6 +28,10 @@ public class Session {
     @JoinColumn(name = "topic_id", nullable = false)
     private Topic topic;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sub_topic_id")
+    private SubTopic subTopic;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default

@@ -1,7 +1,9 @@
 package com.learn.learnix.bot;
 
 import com.learn.learnix.bot.handler.QuestionHandler;
+import com.learn.learnix.bot.handler.QuestionQuantityHandler;
 import com.learn.learnix.bot.handler.StartHandler;
+import com.learn.learnix.bot.handler.SubTopicHandler;
 import com.learn.learnix.bot.handler.TopicHandler;
 import com.learn.learnix.state.*;
 import lombok.RequiredArgsConstructor;
@@ -19,28 +21,26 @@ public class UpdateDispatcher {
     private final TopicHandler topicHandler;
     private final QuestionHandler questionHandler;
     private final UserStateManager stateManager;
+    private final SubTopicHandler subTopicHandler;
+    private final QuestionQuantityHandler questionQuantityHandler;
 
     public void dispatch(AbsSender bot, Update update) throws Exception {
 
-        // ── Text commands ──────────────────────────────────────────────────
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text      = update.getMessage().getText();
             Long   telegramId = update.getMessage().getFrom().getId();
             Long   chatId     = update.getMessage().getChatId();
 
-            // /start always wins — abandon any in-progress session and reset
             if ("/start".equals(text) || "/restart".equals(text)) {
                 startHandler.handle(bot, telegramId, chatId);
                 return;
             }
 
-            // Ignore unexpected text during a quiz
             log.debug("Ignoring text '{}' in state {} for telegramId={}",
                     text, stateManager.getBotState(telegramId), telegramId);
             return;
         }
 
-        // ── Callback queries (button taps) ─────────────────────────────────
         if (update.hasCallbackQuery()) {
             Long   telegramId = update.getCallbackQuery().getFrom().getId();
             BotState state     = stateManager.getBotState(telegramId);
@@ -48,6 +48,10 @@ public class UpdateDispatcher {
             switch (state) {
                 case SELECTING_TOPIC ->
                         topicHandler.handle(bot, update.getCallbackQuery());
+                case SELECTING_SUB_TOPIC ->
+                        subTopicHandler.handle(bot, update.getCallbackQuery());
+                case CHOOSING_QUESTION_SET_QUANTITY ->
+                        questionQuantityHandler.handle(bot, update.getCallbackQuery());
                 case IN_QUIZ ->
                         questionHandler.handle(bot, update.getCallbackQuery());
                 default ->

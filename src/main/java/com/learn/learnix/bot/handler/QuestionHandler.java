@@ -1,5 +1,6 @@
 package com.learn.learnix.bot.handler;
 
+import com.learn.learnix.bot.builder.MessageBuilder;
 import com.learn.learnix.bot.formatter.ResultFormatter;
 import com.learn.learnix.bot.formatter.StatisticsFormatter;
 import com.learn.learnix.bot.keyboard.ChoicesKeyboardFactory;
@@ -48,14 +49,11 @@ public class QuestionHandler {
         state.toggleChoice(choiceId);
 
         SessionQuestion sq = sessionService.getCurrentQuestion(telegramId);
-
-        bot.execute(EditMessageReplyMarkup.builder()
-                .chatId(chatId)
-                .messageId(state.getActiveMessageId())
-                .replyMarkup(ChoicesKeyboardFactory.build(
+        bot.execute(MessageBuilder.buildEditMessageReplyMarkup(chatId, state.getActiveMessageId(),
+                ChoicesKeyboardFactory.build(
                         sq.getQuestion().getChoices(),
-                        state.getSelectedChoiceIds()))
-                .build());
+                        state.getSelectedChoiceIds())
+        ));
     }
 
     private void handleSubmitOrExit(AbsSender bot, CallbackQuery callback,

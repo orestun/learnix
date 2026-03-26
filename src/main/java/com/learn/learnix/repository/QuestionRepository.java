@@ -7,15 +7,23 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Long> {
 
-    @Query("SELECT q FROM Question q WHERE q.topic.id = :topicId")
-    List<Question> findAllByTopicId(@Param("topicId") Long topicId);
+    @Query(value = """
+            SELECT * FROM questions
+            WHERE topic_id = :topicId
+            ORDER BY RANDOM()
+            LIMIT :total
+            """, nativeQuery = true)
+    List<Question> findRandomByTopicId(@Param("topicId")Long topicId, @Param("total") int totalQuestions);
 
-    // Fetches the question AND its choices in a single query
-    @Query("SELECT q FROM Question q LEFT JOIN FETCH q.choices WHERE q.id = :id")
-    Optional<Question> findByIdWithChoices(@Param("id") Long id);
+    @Query(value = """
+            SELECT * FROM questions
+            WHERE sub_topic_id = :subTopicId AND topic_id = :topicId
+            ORDER BY RANDOM()
+            LIMIT :total
+            """, nativeQuery = true)
+    List<Question> findRandomBySubTopicId(@Param("topicId")Long topicId, @Param("subTopicId") Long subTopicId, @Param("total") int totalQuestions);
 }

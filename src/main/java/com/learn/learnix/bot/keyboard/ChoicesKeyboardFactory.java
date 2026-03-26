@@ -8,27 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Builds the inline keyboard for a quiz question.
- *
- * Supports two callback types:
- *   "choice:<id>"  — toggling a single answer choice on or off
- *   "submit"       — confirming the current selection
- *
- * Layout: two choices per row to conserve vertical space, with the
- * Submit button always occupying its own full-width row at the bottom.
- *
- * Selected choices are rendered with a ✅ prefix, unselected with ☐,
- * so the user always sees their current selection without any extra round-trip.
- *
- * Example (choice 2 selected):
- *   [ ☐  ArrayList  ]  [ ✅ LinkedList ]
- *   [ ☐  HashMap    ]  [ ☐  TreeMap    ]
- *   [      Submit answer       ]
- */
 public class ChoicesKeyboardFactory {
 
-    private static final String CHOICE_PREFIX = "c:";   // kept short — Telegram limits callbackData to 64 bytes
+    private static final String CHOICE_PREFIX = "c:";
     private static final String SUBMIT_DATA   = "submit";
     private static final String EXIT   = "exit";
     private static final String SELECTED_MARK = "✅ ";
@@ -52,12 +34,12 @@ public class ChoicesKeyboardFactory {
         // Submit row — always last, full width
         rows.add(List.of(
                 InlineKeyboardButton.builder()
-                        .text("Submit answer")
-                        .callbackData(SUBMIT_DATA)
-                        .build(),
-                InlineKeyboardButton.builder()
                         .text("Finish test")
                         .callbackData(EXIT)
+                        .build(),
+                InlineKeyboardButton.builder()
+                        .text("Submit answer")
+                        .callbackData(SUBMIT_DATA)
                         .build()
         ));
 
@@ -66,8 +48,6 @@ public class ChoicesKeyboardFactory {
                 .keyboard(rows)
                 .build();
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────
 
     private static InlineKeyboardButton buildChoiceButton(Choice choice,
                                                           Set<Long> selectedIds) {

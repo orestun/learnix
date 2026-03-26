@@ -24,13 +24,13 @@ public class Question {
     @JoinColumn(name = "topic_id", nullable = false)
     private Topic topic;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sub_topic_id")
+    private SubTopic subTopic;
+
     @Column(name = "body", nullable = false, columnDefinition = "TEXT")
     private String body;
 
-    /**
-     * 1 = easy, 2 = medium, 3 = hard.
-     * Useful for future filtering or adaptive quizzes.
-     */
     @Column(name = "difficulty", nullable = false)
     @Builder.Default
     private Integer difficulty = 1;
@@ -50,11 +50,5 @@ public class Question {
     @PrePersist
     private void prePersist() {
         createdAt = LocalDateTime.now();
-    }
-
-    public List<Choice> getCorrectChoices() {
-        return choices.stream()
-                .filter(Choice::getIsCorrect)
-                .toList();
     }
 }
