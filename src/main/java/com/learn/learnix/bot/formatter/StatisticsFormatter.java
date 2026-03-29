@@ -77,6 +77,7 @@ public class StatisticsFormatter {
     }
 
     private static void appendQuestionBreakdown(StringBuilder sb, SessionStatsDto stats, boolean isQuizFullyCompleted) {
+        sb.append("<blockquote expandable>");
         for (SessionStatsDto.QuestionStatDto q : stats.getQuestionStats()) {
             String marker = q.isCorrect() ? "✅" : "❌";
             String body   = truncate(q.getQuestionBody(), 35);
@@ -89,6 +90,7 @@ public class StatisticsFormatter {
                     escapeHtml(body),
                     time));
         }
+        sb.append("</blockquote>");
     }
 
     private static void appendRating(StringBuilder sb, double accuracy) {
